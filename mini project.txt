@@ -1,0 +1,125 @@
+import json
+from datetime import datetime, timedelta
+
+TASKS_FILE = 'tasks.json'
+def load_tasks():
+    try:
+        with open(TASKS_FILE, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+def save_tasks(tasks):
+    with open(TASKS_FILE, 'w') as file:
+        json.dump(tasks, file)
+
+def add_task(tasks):
+    description = input("Enter task description: ")
+    due_date = input("Enter due date (YYYY-MM-DD) or press Enter to skip: ")
+    status = False
+
+    task = {
+        "description": description,
+        "due_date": due_date if due_date else None,
+        "status": status
+    }
+    tasks.append(task)
+    save_tasks(tasks)
+    print("Task added.")
+
+def view_tasks(tasks):
+    print("\n1. View all tasks")
+    print("2. View completed tasks")
+    print("3. View pending tasks")
+    print("4. View tasks due soon (within 3 days)")
+    choice = input("Choose an option: ")
+
+    if choice == '1':
+        filtered_tasks = tasks
+    elif choice == '2':
+        filtered_tasks = [task for task in tasks if task['status']]
+    elif choice == '3':
+        filtered_tasks = [task for task in tasks if not task['status']]
+    elif choice == '4':
+        today = datetime.now()
+        soon = today + timedelta(days=3)
+        filtered_tasks = [task for task in tasks if task['due_date'] and today <= datetime.fromisoformat(task['due_date']) <= soon]
+    else:
+        print("Invalid choice.")
+        return
+
+    if not filtered_tasks:
+        print("No tasks found.")
+    else:
+        for i, task in enumerate(filtered_tasks):
+            status = "✓" if task['status'] else "✗"
+            due_date = task['due_date'] if task['due_date'] else "No due date"
+            print(f"{i + 1}. [{status}] {task['description']} (Due: {due_date})")
+
+def mark_task_complete(tasks):
+    view_tasks(tasks)
+    task_number = int(input("Enter the task number to mark as complete: "))
+    if 0 <= task_number < len(tasks):
+        tasks[task_number]['status'] = True
+        save_tasks(tasks)
+        print("Task marked as completed.")
+    else:
+        print("Invalid task number.")
+
+def edit_task(tasks):
+    view_tasks(tasks)
+    task_number = int(input("Enter the task number to edit: ")) - 1
+    if 0 <= task_number < len(tasks):
+        new_description = input("Enter new description (leave blank to keep current): ")
+        new_due_date = input("Enter new due date (YYYY-MM-DD) or press Enter to keep current: ")
+        if new_description:
+            tasks[task_number]['description'] = new_description
+        if new_due_date:
+            tasks[task_number]['due_date'] = new_due_date
+        save_tasks(tasks)
+        print("Task updated.")
+    else:
+        print("Invalid task number.")
+
+def delete_task(tasks):
+    """Delete a task."""
+    view_tasks(tasks)
+    task_number = int(input("Enter the task number to delete: ")) - 1
+    if 0 <= task_number < len(tasks):
+        tasks.pop(task_number)
+        save_tasks(tasks)
+        print("Task deleted.")
+    else:
+        print("Invalid task number.")
+
+def main():
+    tasks = load_tasks()
+
+    while True:
+        print("\n=== To-Do List Menu ===")
+        print("1. Add a new task")
+        print("2. View tasks")
+        print("3. Mark a task as completed")
+        print("4. Edit a task")
+        print("5. Delete a task")
+        print("6. Exit")
+        choice = input("Choose an option: ")
+
+        if choice == '1':
+            add_task(tasks)
+        elif choice == '2':
+            view_tasks(tasks)
+        elif choice == '3':
+            mark_task_complete(tasks)
+        elif choice == '4':
+            edit_task(tasks)
+        elif choice == '5':
+            delete_task(tasks)
+        elif choice == '6':
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+if __name__ == "__main__":
+    main()
+
